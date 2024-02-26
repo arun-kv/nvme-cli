@@ -7180,6 +7180,7 @@ static int submit_io(int opcode, char *command, const char *desc, int argc, char
 	const char *storage_tag_check = "This bit specifies the Storage Tag field shall be\n"
 		"checked as part of end-to-end data protection processing";
 	const char *force = "The \"I know what I'm doing\" flag, do not enforce exclusive access for write";
+	const char *fused = "fused command, value 1 indicate first command of a fused operation and value 2 for second command";
 
 	struct config {
 		__u32	namespace_id;
@@ -7204,6 +7205,7 @@ static int submit_io(int opcode, char *command, const char *desc, int argc, char
 		bool	dry_run;
 		bool	latency;
 		bool	force;
+		__u8	fused;
 	};
 
 	struct config cfg = {
@@ -7229,6 +7231,7 @@ static int submit_io(int opcode, char *command, const char *desc, int argc, char
 		.dry_run		= false,
 		.latency		= false,
 		.force			= false,
+		.fused			= false,
 	};
 
 	NVME_ARGS(opts,
@@ -7253,7 +7256,9 @@ static int submit_io(int opcode, char *command, const char *desc, int argc, char
 		  OPT_FLAG("show-command",      'V', &cfg.show,              show),
 		  OPT_FLAG("dry-run",           'w', &cfg.dry_run,           dry),
 		  OPT_FLAG("latency",           't', &cfg.latency,           latency),
-		  OPT_FLAG("force",               0, &cfg.force,             force));
+		  OPT_FLAG("force",               0, &cfg.force,             force),
+		  OPT_BYTE("fused",	        'e', &cfg.fused,             fused));
+
 
 	if (opcode != nvme_cmd_write) {
 		err = parse_and_open(&dev, argc, argv, desc, opts);
@@ -7263,6 +7268,7 @@ static int submit_io(int opcode, char *command, const char *desc, int argc, char
 		err = argconfig_parse(argc, argv, desc, opts);
 		if (err)
 			return err;
+
 		err = open_exclusive(&dev, argc, argv, cfg.force);
 		if (err) {
 			if (errno == EBUSY) {
@@ -7278,6 +7284,11 @@ static int submit_io(int opcode, char *command, const char *desc, int argc, char
 		}
 	}
 
+	if (cfg.fused > 2) {
+		fprintf(stderr, "Invalid fused flag.\n");
+		err = -EINVAL;
+		goto err;
+	}
 	if (!cfg.namespace_id) {
 		err = nvme_get_nsid(dev_fd(dev), &cfg.namespace_id);
 		if (err < 0) {
@@ -7444,6 +7455,8 @@ static int submit_io(int opcode, char *command, const char *desc, int argc, char
 		printf("storagetag      : %"PRIx64"\n", (uint64_t)cfg.storage_tag);
 		printf("pif             : %02x\n", pif);
 		printf("sts             : %02x\n", sts);
+		printf("force             : %02x\n", cfg.force);
+		printf("fused             : %02x\n", cfg.fused);
 	}
 	if (cfg.dry_run)
 		return 0;
@@ -7469,6 +7482,7 @@ static int submit_io(int opcode, char *command, const char *desc, int argc, char
 		.metadata	= mbuffer,
 		.timeout	= NVME_DEFAULT_IOCTL_TIMEOUT,
 		.result		= NULL,
+		.flags		= cfg.fused,
 	};
 	gettimeofday(&start_time, NULL);
 	err = nvme_io(&args, opcode);
