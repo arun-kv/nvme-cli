@@ -5735,6 +5735,68 @@ static int format_cmd(int argc, char **argv, struct command *cmd, struct plugin 
 	return err;
 }
 
+int send_abort(int argc, char **argv, struct command *cmd, struct plugin *plugin)
+{
+	const char *desc = "Abort an nvme command\n";
+	const char *cid = "command id to be aborted (required)";
+	const char *sqid = "sqid in which the command was submitted (required)";
+
+	_cleanup_nvme_dev_ struct nvme_dev *dev = NULL;
+	_cleanup_free_ void *buf = NULL;
+	_cleanup_file_ int ffd = -1;
+	int err;
+	__u32 result;
+
+	struct config {
+		__u16	cid;
+		__u16	sqid;
+	};
+
+	struct config cfg = {
+		.cid		= 0,
+		.sqid		= 0,
+	};
+
+	NVME_ARGS(opts, cfg,
+		  OPT_UINT("sqid",        's', &cfg.sqid,        sqid),
+		  OPT_UINT("cid",      'c', &cfg.cid,        cid));
+
+	err = parse_and_open(&dev, argc, argv, desc, opts);
+	if (err)
+		return err;
+
+
+	if (!cfg.cid) {
+		nvme_show_error("invalid command id: %u", cfg.cid);
+		return -1;
+	}
+
+
+	struct nvme_abort_args args = {
+		.args_size	= sizeof(args),
+		.fd		= dev_fd(dev),
+		.cid		= cfg.cid,
+		.sqid		= cfg.sqid,
+		.timeout	= NVME_DEFAULT_IOCTL_TIMEOUT,
+		.result		= &result,
+	};
+	err = nvme_abort(&args);
+	if (err < 0) {
+		nvme_show_error("set-feature: %s", nvme_strerror(errno));
+	} else if (!err) {
+		printf("abort: cid:%u sqid: %u\n", cfg.cid, cfg.sqid);
+	} else if (err > 0) {
+		nvme_show_status(err);
+	}
+
+	return err;
+}
+
+
+
+
+
+
 #define STRTOUL_AUTO_BASE              (0)
 #define NVME_FEAT_TIMESTAMP_DATA_SIZE  (6)
 
