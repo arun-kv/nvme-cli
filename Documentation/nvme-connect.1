@@ -2,12 +2,12 @@
 .\"     Title: nvme-connect
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 02/14/2024
+.\"      Date: 05/20/2025
 .\"    Manual: NVMe Manual
 .\"    Source: NVMe
 .\"  Language: English
 .\"
-.TH "NVME\-CONNECT" "1" "02/14/2024" "NVMe" "NVMe Manual"
+.TH "NVME\-CONNECT" "1" "05/20/2025" "NVMe" "NVMe Manual"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -50,8 +50,9 @@ nvme-connect \- Connect to a Fabrics controller\&.
                         [\-\-keep\-alive\-tmo=<#> | \-k <#>]
                         [\-\-reconnect\-delay=<#> | \-c <#>]
                         [\-\-ctrl\-loss\-tmo=<#> | \-l <#>] [\-\-tos=<#> | \-T <#>]
-                        [\-\-keyring=<#>] [\-\-tls_key=<#>]
-                        [\-\-duplicate\-connect | \-D] [\-\-disable\-sqflow | \-d]
+                        [\-\-keyring=<keyring>] [\-\-tls\-key=<tls\-key>]
+                        [\-\-tls\-key\-identity=<identity>]
+                        [\-\-duplicate\-connect | \-D] [\-\-disable\-sqflow ]
                         [\-\-hdr\-digest | \-g] [\-\-data\-digest | \-G] [\-\-tls]
                         [\-\-concat] [\-\-dump\-config | \-O] [\-\-application=<id>]
                         [\-\-output\-format=<fmt> | \-o <fmt>] [\-\-verbose | \-v]
@@ -188,7 +189,9 @@ Overrides the default delay (in seconds) before reconnect is attempted after a c
 .PP
 \-l <#>, \-\-ctrl\-loss\-tmo=<#>
 .RS 4
-Overrides the default controller loss timeout period (in seconds)\&.
+Overrides the default controller loss timeout period (in seconds)\&. This is the maximum time the kernel will retry a connection, where each retry will be issued after
+\fIreconnect\-delay\fR
+seconds\&.
 .RE
 .PP
 \-T <#>, \-\-tos=<#>
@@ -196,14 +199,23 @@ Overrides the default controller loss timeout period (in seconds)\&.
 Type of service for the connection (TCP)
 .RE
 .PP
-\-\-keyring=<#>
+\-\-keyring=<keyring>
 .RS 4
-Keyring for TLS key lookup\&.
+Keyring for TLS key lookup, either the key id or the keyring name\&.
 .RE
 .PP
-\-\-tls_key=<#>
+\-\-tls\-key=<tls\-key>
 .RS 4
-TLS key for the connection (TCP)\&.
+TLS key for the connection (TCP), either the TLS key in interchange format or the key id\&. It\(cqs strongly recommended not to provide the TLS key via the comamnd line due to security concerns\&. Instead in production situation, the key should be loaded into the keystore with
+\fInvme tls \-\-import\fR
+and only the
+\fI\-\-tls\fR
+options used\&. The kernel will select the matching key\&.
+.RE
+.PP
+\-\-tls\-key\-identity=<identity>
+.RS 4
+The identity used for the tls\-key\&. If none is provided the tls\-key provided via the comamnd line is considered a configuration key and a derive key will be loaded into the keyring\&.
 .RE
 .PP
 \-D, \-\-duplicate\-connect
@@ -211,7 +223,7 @@ TLS key for the connection (TCP)\&.
 Allows duplicated connections between same transport host and subsystem port\&.
 .RE
 .PP
-\-d, \-\-disable\-sqflow
+\-\-disable\-sqflow
 .RS 4
 Disables SQ flow control to omit head doorbell update for submission queues when sending nvme completions\&.
 .RE

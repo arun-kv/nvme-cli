@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Copyright (c) 2022 Solidigm.
+ * Copyright (c) 2022-2024 Solidigm.
  *
  * Author: leonardo.da.cunha@solidigm.com
  */
@@ -45,7 +45,7 @@ struct latency_tracker {
 	int fd;
 	__u8 uuid_index;
 	struct config cfg;
-	enum nvme_print_flags print_flags;
+	nvme_print_flags_t print_flags;
 	struct latency_statistics stats;
 	struct json_object *bucket_list;
 	__u32 bucket_list_size;
@@ -430,7 +430,7 @@ int solidigm_get_latency_tracking_log(int argc, char **argv, struct command *cmd
 		return -EINVAL;
 	}
 
-	lt.uuid_index = solidigm_get_vu_uuid_index(dev);
+	sldgm_get_uuid_index(dev, &lt.uuid_index);
 
 	err = latency_tracking_enable(&lt);
 	if (err) {

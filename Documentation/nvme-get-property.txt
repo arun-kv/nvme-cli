@@ -12,6 +12,7 @@ SYNOPSIS
 'nvme get-property' <device> [--offset=<offset> | -O <offset>]
 			[--human-readable | -H]
 			[--output-format=<fmt> | -o <fmt>] [--verbose | -v]
+			[--timeout=<timeout> | -t <timeout>]
 
 DESCRIPTION
 -----------
@@ -19,8 +20,8 @@ Reads and shows the defined NVMe controller property for NVMe over Fabric.
 
 OPTIONS
 -------
--O::
---offset::
+-O <offset>::
+--offset=<offset>::
 	The offset of the property. One of CAP=0x0, VS=0x8, CC=0x14, CSTS=0x1c, NSSR=0x20
 
 -H::
@@ -35,6 +36,10 @@ OPTIONS
 -v::
 --verbose::
 	Increase the information detail in the output.
+
+-t <timeout>::
+--timeout=<timeout>::
+	Override default timeout value. In milliseconds.
 
 EXAMPLES
 --------

@@ -751,7 +751,8 @@ nvme-device-self-test(1) Manual Page
 <div class="verseblock">
 <pre class="content"><em>nvme device-self-test</em> &lt;device&gt; [--namespace-id=&lt;NUM&gt; | -n &lt;NUM&gt;]
                         [--self-test-code=&lt;NUM&gt; | -s &lt;NUM&gt;] [--wait | -w]
-                        [--output-format=&lt;fmt&gt; | -o &lt;fmt&gt;] [--verbose | -v]</pre>
+                        [--output-format=&lt;fmt&gt; | -o &lt;fmt&gt;] [--verbose | -v]
+                        [--timeout=&lt;timeout&gt; | -t &lt;timeout&gt;]</pre>
 <div class="attribution">
 </div></div>
 </div>
@@ -763,6 +764,7 @@ nvme-device-self-test(1) Manual Page
 <div class="paragraph"><p>The &lt;device&gt; parameter is mandatory and may be either the NVMe character
 device (ex: /dev/nvme0), or a namespace block device (ex: /dev/nvme0n1).</p></div>
 <div class="paragraph"><p>On success, the corresponding test is initiated.</p></div>
+<div class="paragraph"><p>The results of this test can be queried via <em>nvme self-test-log &lt;device&gt;</em>.</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -833,6 +835,17 @@ device (ex: /dev/nvme0), or a namespace block device (ex: /dev/nvme0n1).</p></di
         Increase the information detail in the output.
 </p>
 </dd>
+<dt class="hdlist1">
+-t &lt;timeout&gt;
+</dt>
+<dt class="hdlist1">
+--timeout=&lt;timeout&gt;
+</dt>
+<dd>
+<p>
+        Override default timeout value. In milliseconds.
+</p>
+</dd>
 </dl></div>
 </div>
 </div>
@@ -872,7 +885,7 @@ Abort the device self-test operation in the namespace-id 1:
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2024-02-14 10:43:42 CET
+ 2025-05-20 12:19:22 CEST
 </div>
 </div>
 </body>

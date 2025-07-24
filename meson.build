@@ -4,10 +4,10 @@ project(
     'nvme-cli', ['c'],
     meson_version: '>= 0.50.0',
     license: 'GPL-2.0-only',
-    version: '2.8',
+    version: '2.14',
     default_options: [
       'c_std=gnu99',
-      'buildtype=debug',
+      'buildtype=debugoptimized',
       'prefix=/usr/local',
       'warning_level=1',
       'sysconfdir=etc',
@@ -48,7 +48,7 @@ conf.set('SYSCONFDIR', '"@0@"'.format(sysconfdir))
 conf.set('RUNDIR', '"@0@"'.format(rundir))
 
 # Check for libnvme availability
-libnvme_dep = dependency('libnvme', version: '>=1.8', required: true,
+libnvme_dep = dependency('libnvme', version: '>=1.14', required: true,
                          fallback : ['libnvme', 'libnvme_dep'])
 libnvme_mi_dep = dependency('libnvme-mi', required: true,
                          fallback : ['libnvme', 'libnvme_mi_dep'])
@@ -160,7 +160,7 @@ conf.set10(
         name: 'linux/sed-opal.h'
 
     ),
-    description: 'Is linux/sed-opa.h include-able?'
+    description: 'Is linux/sed-opal.h include-able?'
 )
 conf.set10(
     'HAVE_KEY_TYPE',
@@ -175,6 +175,20 @@ conf.set10(
         name: 'key_type'
     ),
     description: 'Does struct opal_key have a key_type field?'
+)
+conf.set(
+    'HAVE_TM_GMTOFF',
+    cc.compiles(
+        '''
+           #include <time.h>
+           int main(void) {
+                struct tm tm;
+                tm.tm_gmtoff = 1;
+           }
+        ''',
+        name: 'tm_gmtoff'
+    ),
+    description: 'Does struct tm have a tm_gmtoff field?'
 )
 
 if cc.has_function_attribute('fallthrough')
@@ -252,7 +266,9 @@ endforeach
 udev_files = [
   '65-persistent-net-nbft.rules',
   '70-nvmf-autoconnect.rules',
+  '70-nvmf-keys.rules',
   '71-nvmf-netapp.rules',
+  '71-nvmf-vastdata.rules',
 ]
 
 foreach file : udev_files
@@ -281,6 +297,7 @@ sources = [
   'nvme-wrap.c',
   'plugin.c',
   'libnvme-wrap.c',
+  'logging.c',
 ]
 if json_c_dep.found()
     sources += [
@@ -352,7 +369,8 @@ if meson.version().version_compare('>=0.53.0')
     }
     summary(dep_dict, section: 'Dependencies')
     conf_dict = {
-        'pdc enabled':       get_option('pdc-enabled')
+        'git version':       conf.get('GIT_VERSION'),
+        'pdc enabled':       get_option('pdc-enabled'),
     }
     summary(conf_dict, section: 'Configuration')
 endif

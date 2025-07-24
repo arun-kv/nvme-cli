@@ -17,6 +17,9 @@ extern bool sedopal_ask_key;
 extern bool sedopal_ask_new_key;
 extern bool sedopal_destructive_revert;
 extern bool sedopal_psid_revert;
+extern bool sedopal_lock_ro;
+extern bool sedopal_discovery_verbose;
+extern bool sedopal_discovery_udev;
 
 /*
  * Sub-commands supported by the sedopal command
@@ -51,5 +54,6 @@ int sedopal_cmd_discover(int fd);
 int sedopal_open_nvme_device(char *device);
 int sedopal_lock_unlock(int fd, int lock_state);
 const char *sedopal_error_to_text(int code);
+int sedopal_locking_state(int fd);
 
 #endif /* _SED_OPAL_CMD_H */

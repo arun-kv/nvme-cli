@@ -100,17 +100,16 @@ int nvme_cli_identify_allocated_ns_list(struct nvme_dev *dev, __u32 nsid,
 	return do_admin_op(identify_allocated_ns_list, dev, nsid, list);
 }
 
-int nvme_cli_identify_primary_ctrl(struct nvme_dev *dev, __u32 nsid,
+int nvme_cli_identify_primary_ctrl(struct nvme_dev *dev, __u16 cntid,
 				   struct nvme_primary_ctrl_cap *cap)
 {
-	return do_admin_op(identify_primary_ctrl, dev, nsid, cap);
+	return do_admin_op(identify_primary_ctrl, dev, cntid, cap);
 }
 
-int nvme_cli_identify_secondary_ctrl_list(struct nvme_dev *dev,
-					  __u16 ctrl_id,
+int nvme_cli_identify_secondary_ctrl_list(struct nvme_dev *dev, __u16 cntid,
 					  struct nvme_secondary_ctrl_list *sc_list)
 {
-	return do_admin_op(identify_secondary_ctrl_list, dev, ctrl_id,
+	return do_admin_op(identify_secondary_ctrl_list, dev, cntid,
 			   sc_list);
 }
 
@@ -120,8 +119,42 @@ int nvme_cli_get_features(struct nvme_dev *dev,
 	return do_admin_args_op(get_features, dev, args);
 }
 
-int nvme_cli_ns_mgmt_delete(struct nvme_dev *dev, __u32 nsid)
+int nvme_cli_get_features_arbitration(struct nvme_dev *dev, enum nvme_get_features_sel sel,
+				      __u32 *result)
 {
+	return do_admin_op(get_features_arbitration, dev, sel, result);
+}
+
+int nvme_cli_get_features_power_mgmt(struct nvme_dev *dev, enum nvme_get_features_sel sel,
+				     __u32 *result)
+{
+	return do_admin_op(get_features_power_mgmt, dev, sel, result);
+}
+
+int nvme_cli_set_features(struct nvme_dev *dev, struct nvme_set_features_args *args)
+{
+	return do_admin_args_op(set_features, dev, args);
+}
+
+int nvme_cli_set_features_arbitration(struct nvme_dev *dev, __u8 ab, __u8 lpw, __u8 mpw, __u8 hpw,
+				      bool  save, __u32 *result)
+{
+	if (dev->type == NVME_DEV_DIRECT)
+		return nvme_set_features_arbitration(dev_fd(dev), ab, lpw, mpw, hpw, save, result);
+
+	return -ENODEV;
+}
+
+int nvme_cli_features_power_mgmt(struct nvme_dev *dev, __u8 ps, __u8 wh, bool save, __u32 *result)
+{
+	return do_admin_op(set_features_power_mgmt, dev, ps, wh, save, result);
+}
+
+int nvme_cli_ns_mgmt_delete(struct nvme_dev *dev, __u32 nsid, __u32 timeout)
+{
+	if (dev->type == NVME_DEV_DIRECT)
+		return nvme_ns_mgmt_delete_timeout(dev_fd(dev), nsid, timeout);
+
 	return do_admin_op(ns_mgmt_delete, dev, nsid);
 }
 
@@ -207,6 +240,12 @@ int nvme_cli_get_log_changed_ns_list(struct nvme_dev *dev, bool rae,
 	return do_admin_op(get_log_changed_ns_list, dev, rae, ns_log);
 }
 
+int nvme_cli_get_log_changed_alloc_ns_list(struct nvme_dev *dev, bool rae, __u32 len,
+					   struct nvme_ns_list *ns_log)
+{
+	return do_admin_op(get_log_changed_alloc_ns_list, dev, rae, len, ns_log);
+}
+
 int nvme_cli_get_log_cmd_effects(struct nvme_dev *dev, enum nvme_csi csi,
 				 struct nvme_cmd_effects_log *effects_log)
 {
@@ -219,10 +258,11 @@ int nvme_cli_get_log_device_self_test(struct nvme_dev *dev,
 	return do_admin_op(get_log_device_self_test, dev, log);
 }
 
-int nvme_cli_get_log_create_telemetry_host(struct nvme_dev *dev,
+int nvme_cli_get_log_create_telemetry_host_mcda(struct nvme_dev *dev,
+					   enum nvme_telemetry_da mcda,
 					   struct nvme_telemetry_log *log)
 {
-	return do_admin_op(get_log_create_telemetry_host, dev, log);
+	return do_admin_op(get_log_create_telemetry_host_mcda, dev, mcda, log);
 }
 
 int nvme_cli_get_log_telemetry_host(struct nvme_dev *dev, __u64 offset,
@@ -257,17 +297,11 @@ int nvme_cli_get_log_predictable_lat_event(struct nvme_dev *dev, bool rae,
 			   len, log);
 }
 
-int nvme_cli_get_log_ana(struct nvme_dev *dev,
-			 enum nvme_log_ana_lsp lsp, bool rae,
-			 __u64 offset, __u32 len, void *log)
+int nvme_cli_get_ana_log_atomic(struct nvme_dev *dev, bool rgo, bool rae,
+				unsigned int retries,
+				struct nvme_ana_log *log, __u32 *len)
 {
-	return do_admin_op(get_log_ana, dev, lsp, rae, offset, len, log);
-}
-
-int nvme_cli_get_log_ana_groups(struct nvme_dev *dev, bool rae, __u32 len,
-				struct nvme_ana_group_desc *log)
-{
-	return do_admin_op(get_log_ana_groups, dev, rae, len, log);
+	return do_admin_op(get_ana_log_atomic, dev, rgo, rae, retries, log, len);
 }
 
 int nvme_cli_get_log_lba_status(struct nvme_dev *dev, bool rae,
@@ -429,8 +463,53 @@ int nvme_cli_security_receive(struct nvme_dev *dev,
 	return -ENODEV;
 }
 
-void nvme_cli_set_debug(struct nvme_dev *dev, bool set)
+int nvme_cli_get_log_mgmt_addr_list(struct nvme_dev *dev, __u32 len,
+				    struct nvme_mgmt_addr_list_log *ma_list)
+{
+	return do_admin_op(get_log_mgmt_addr_list, dev, len, ma_list);
+}
+
+int nvme_cli_get_log_rotational_media_info(struct nvme_dev *dev, __u16 endgid, __u32 len,
+					   struct nvme_rotational_media_info_log *info)
 {
 	if (dev->type == NVME_DEV_DIRECT)
-		nvme_set_debug(set);
+		return nvme_get_log_rotational_media_info(dev->direct.fd, endgid, len, info);
+
+	return -ENODEV;
+}
+
+int nvme_cli_get_log_dispersed_ns_participating_nss(struct nvme_dev *dev, __u32 nsid, __u32 len,
+	struct nvme_dispersed_ns_participating_nss_log *log)
+{
+	return do_admin_op(get_log_dispersed_ns_participating_nss, dev, nsid, len, log);
+}
+
+int nvme_cli_get_log_reachability_groups(struct nvme_dev *dev, bool rgo, bool rae, __u32 len,
+					 struct nvme_reachability_groups_log *log)
+{
+	return do_admin_op(get_log_reachability_groups, dev, rgo, rae, len, log);
+}
+
+int nvme_cli_get_log_reachability_associations(struct nvme_dev *dev, bool rao, bool rae, __u32 len,
+					       struct nvme_reachability_associations_log *log)
+{
+	return do_admin_op(get_log_reachability_associations, dev, rao, rae, len, log);
+}
+
+int nvme_cli_get_log_host_discovery(struct nvme_dev *dev, bool allhoste, bool rae, __u32 len,
+				    struct nvme_host_discover_log *log)
+{
+	return do_admin_op(get_log_host_discover, dev, allhoste, rae, len, log);
+}
+
+int nvme_cli_get_log_ave_discovery(struct nvme_dev *dev, bool rae, __u32 len,
+				   struct nvme_ave_discover_log *log)
+{
+	return do_admin_op(get_log_ave_discover, dev, rae, len, log);
+}
+
+int nvme_cli_get_log_pull_model_ddc_req(struct nvme_dev *dev, bool rae, __u32 len,
+					struct nvme_pull_model_ddc_req_log *log)
+{
+	return do_admin_op(get_log_pull_model_ddc_req, dev, rae, len, log);
 }

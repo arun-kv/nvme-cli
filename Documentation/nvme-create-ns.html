@@ -936,7 +936,8 @@ device (ex: /dev/nvme0), or a namespace block device (ex: /dev/nvme0n1).</p></di
 <dd>
 <p>
         The namespace size (NSZE) in standard SI units (aligned on 1Mib boundaries,
-        unless the controller recommends a smaller value).
+        unless the controller recommends a different value, see namespace
+        granularity).
         The value SI suffixed is divided by the namespace LBA size to set as NSZE.
         If the value not suffixed it is set as same with the nsze option.
 </p>
@@ -950,7 +951,8 @@ device (ex: /dev/nvme0), or a namespace block device (ex: /dev/nvme0n1).</p></di
 <dd>
 <p>
         The namespace capacity (NCAP) in standard SI units (aligned on 1Mib boundaries,
-        unless the controller recommends a smaller value).
+        unless the controller recommends a different value, see namespace
+        granularity).
         The value SI suffixed is divided by the namespace LBA size to set as NCAP.
         If the value not suffixed it is set as same with the ncap option.
 </p>
@@ -1040,6 +1042,17 @@ device (ex: /dev/nvme0), or a namespace block device (ex: /dev/nvme0n1).</p></di
         Increase the information detail in the output.
 </p>
 </dd>
+<dt class="hdlist1">
+-t &lt;timeout&gt;
+</dt>
+<dt class="hdlist1">
+--timeout=&lt;timeout&gt;
+</dt>
+<dd>
+<p>
+        Override default timeout value 120,000. In milliseconds.
+</p>
+</dd>
 </dl></div>
 </div>
 </div>
@@ -1071,7 +1084,7 @@ Create a namespace:
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2024-02-14 10:43:42 CET
+ 2025-05-20 12:19:22 CEST
 </div>
 </div>
 </body>

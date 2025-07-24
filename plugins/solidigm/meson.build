@@ -1,4 +1,5 @@
 sources += [
+  'plugins/solidigm/solidigm-nvme.c',
   'plugins/solidigm/solidigm-id-ctrl.c',
   'plugins/solidigm/solidigm-util.c',
   'plugins/solidigm/solidigm-smart.c',
@@ -11,6 +12,7 @@ sources += [
   'plugins/solidigm/solidigm-temp-stats.c',
   'plugins/solidigm/solidigm-get-drive-info.c',
   'plugins/solidigm/solidigm-ocp-version.c',
+  'plugins/solidigm/solidigm-workload-tracker.c',
 ]
 subdir('solidigm-telemetry')
 

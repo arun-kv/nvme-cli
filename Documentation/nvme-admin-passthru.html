@@ -752,15 +752,15 @@ nvme-admin-passthru(1) Manual Page
 <pre class="content"><em>nvme-admin-passthru</em> &lt;device&gt; [--opcode=&lt;opcode&gt; | -O &lt;opcode&gt;]
                         [--flags=&lt;flags&gt; | -f &lt;flags&gt;] [-rsvd=&lt;rsvd&gt; | -R &lt;rsvd&gt;]
                         [--namespace-id=&lt;nsid&gt; | -n &lt;nsid&gt;] [--cdw2=&lt;cdw2&gt; | -2 &lt;cdw2&gt;]
-                        [--cdw3=&lt;cdw3&gt; | -3 &lt;cdw3&gt;] [--cdw10=&lt;cdw10&gt; | -4 &lt;cdw4&gt;]
-                        [--cdw11=&lt;cdw11&gt; | -5 &lt;cdw5&gt;] [--cdw12=&lt;cdw12&gt; | -6 &lt;cdw6&gt;]
-                        [--cdw13=&lt;cdw13&gt; | -7 &lt;cdw7&gt;] [--cdw14=&lt;cdw14&gt; | -8 &lt;cdw8&gt;]
-                        [--cdw15=&lt;cdw15&gt; | -9 &lt;cdw9&gt;]
+                        [--cdw3=&lt;cdw3&gt; | -3 &lt;cdw3&gt;] [--cdw10=&lt;cdw10&gt; | -4 &lt;cdw10&gt;]
+                        [--cdw11=&lt;cdw11&gt; | -5 &lt;cdw11&gt;] [--cdw12=&lt;cdw12&gt; | -6 &lt;cdw12&gt;]
+                        [--cdw13=&lt;cdw13&gt; | -7 &lt;cdw13&gt;] [--cdw14=&lt;cdw14&gt; | -8 &lt;cdw14&gt;]
+                        [--cdw15=&lt;cdw15&gt; | -9 &lt;cdw15&gt;]
                         [--data-len=&lt;data-len&gt; | -l &lt;data-len&gt;]
                         [--metadata-len=&lt;len&gt; | -m &lt;len&gt;]
                         [--input-file=&lt;file&gt; | -i &lt;file&gt;]
                         [--read | -r] [--write | -w]
-                        [--timeout=&lt;to&gt; | -t &lt;to&gt;]
+                        [--timeout=&lt;timeout&gt; | -t &lt;timeout&gt;]
                         [--show-command | -s]
                         [--dry-run | -d]
                         [--raw-binary | -b]
@@ -799,6 +799,7 @@ printed to stdout for another program to parse.</p></div>
 <dd>
 <p>
         The NVMe opcode to send to the device in the command
+        Required argument as this param is mandatory.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -985,6 +986,17 @@ printed to stdout for another program to parse.</p></div>
         Increase the information detail in the output.
 </p>
 </dd>
+<dt class="hdlist1">
+-t &lt;timeout&gt;
+</dt>
+<dt class="hdlist1">
+--timeout=&lt;timeout&gt;
+</dt>
+<dd>
+<p>
+        Override default timeout value. In milliseconds.
+</p>
+</dd>
 </dl></div>
 </div>
 </div>
@@ -1027,7 +1039,7 @@ Or if you want to save that structure to a file:
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2024-02-14 10:43:42 CET
+ 2025-05-20 12:19:22 CEST
 </div>
 </div>
 </body>

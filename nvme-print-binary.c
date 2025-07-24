@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include "nvme-print.h"
+#include "logging.h"
+#include "common.h"
 
 static struct print_ops binary_print_ops;
 
@@ -25,7 +27,7 @@ static void binary_persistent_event_log(void *pevent_log_info,
 }
 
 static void binary_endurance_group_event_agg_log(
-	struct nvme_aggregate_predictable_lat_event *endurance_log,
+	struct nvme_aggregate_endurance_group_event *endurance_log,
 	__u64 log_entries, __u32 size, const char *devname)
 {
 	d_raw((unsigned char *)endurance_log, size);
@@ -63,14 +65,12 @@ static void binary_boot_part_log(void *bp_log, const char *devname,
 	d_raw((unsigned char *)bp_log, size);
 }
 
-static void binary_phy_rx_eom_log(struct nvme_phy_rx_eom_log *log,
-	__u16 controller)
+static void binary_phy_rx_eom_log(struct nvme_phy_rx_eom_log *log, __u16 controller)
 {
-	size_t len;
+	size_t len = le16_to_cpu(log->hsize);
+
 	if (log->eomip == NVME_PHY_RX_EOM_COMPLETED)
-		len = log->hsize + log->dsize * log->nd;
-	else
-		len = log->hsize;
+		len += (size_t)le32_to_cpu(log->dsize) * le16_to_cpu(log->nd);
 
 	d_raw((unsigned char *)log, len);
 }
@@ -233,8 +233,7 @@ static void binary_fw_log(struct nvme_firmware_slot *fw_log,
 	d_raw((unsigned char *)fw_log, sizeof(*fw_log));
 }
 
-static void binary_changed_ns_list_log(struct nvme_ns_list *log,
-				   const char *devname)
+static void binary_changed_ns_list_log(struct nvme_ns_list *log, const char *devname, bool alloc)
 {
 	d_raw((unsigned char *)log, sizeof(*log));
 }
@@ -253,7 +252,7 @@ static void binary_endurance_log(struct nvme_endurance_group_log *endurance_log,
 }
 
 static void binary_smart_log(struct nvme_smart_log *smart, unsigned int nsid,
-	 const char *devname)
+			     const char *devname)
 {
 	d_raw((unsigned char *)smart, sizeof(*smart));
 }
@@ -297,6 +296,57 @@ static void binary_discovery_log(struct nvmf_discovery_log *log, int numrec)
 	      numrec * sizeof(struct nvmf_disc_log_entry));
 }
 
+static void binary_effects_log_pages(struct list_head *list)
+{
+	nvme_effects_log_node_t *node = NULL;
+
+	list_for_each(list, node, node) {
+		d_raw((unsigned char *)&node->csi, sizeof(node->csi));
+		d_raw((unsigned char *)&node->effects, sizeof(node->effects));
+	}
+}
+
+static void binary_mgmt_addr_list_log(struct nvme_mgmt_addr_list_log *ma_list)
+{
+	d_raw((unsigned char *)ma_list, sizeof(*ma_list));
+}
+
+static void binary_rotational_media_info_log(struct nvme_rotational_media_info_log *info)
+{
+	d_raw((unsigned char *)info, sizeof(*info));
+}
+
+static void binary_dispersed_ns_psub_log(struct nvme_dispersed_ns_participating_nss_log *log)
+{
+	d_raw((unsigned char *)log, sizeof(*log) + le64_to_cpu(log->numpsub) * NVME_NQN_LENGTH);
+}
+
+static void binary_reachability_groups_log(struct nvme_reachability_groups_log *log, __u64 len)
+{
+	d_raw((unsigned char *)log, len);
+}
+
+static void binary_reachability_associations_log(struct nvme_reachability_associations_log *log,
+						 __u64 len)
+{
+	d_raw((unsigned char *)log, len);
+}
+
+static void binary_host_discovery_log(struct nvme_host_discover_log *log)
+{
+	d_raw((unsigned char *)log, le32_to_cpu(log->thdlpl));
+}
+
+static void binary_ave_discovery_log(struct nvme_ave_discover_log *log)
+{
+	d_raw((unsigned char *)log, le32_to_cpu(log->tadlpl));
+}
+
+static void binary_pull_model_ddc_req_log(struct nvme_pull_model_ddc_req_log *log)
+{
+	d_raw((unsigned char *)log, le32_to_cpu(log->tpdrpl));
+}
+
 static struct print_ops binary_print_ops = {
 	/* libnvme types.h print functions */
 	.ana_log			= binary_ana_log,
@@ -306,7 +356,7 @@ static struct print_ops binary_print_ops = {
 	.ctrl_registers			= binary_ctrl_registers,
 	.directive			= binary_directive,
 	.discovery_log			= binary_discovery_log,
-	.effects_log_list		= NULL,
+	.effects_log_list		= binary_effects_log_pages,
 	.endurance_group_event_agg_log	= binary_endurance_group_event_agg_log,
 	.endurance_group_list		= NULL,
 	.endurance_log			= binary_endurance_log,
@@ -363,6 +413,14 @@ static struct print_ops binary_print_ops = {
 	.d				= NULL,
 	.show_init			= NULL,
 	.show_finish			= NULL,
+	.mgmt_addr_list_log		= binary_mgmt_addr_list_log,
+	.rotational_media_info_log	= binary_rotational_media_info_log,
+	.dispersed_ns_psub_log		= binary_dispersed_ns_psub_log,
+	.reachability_groups_log	= binary_reachability_groups_log,
+	.reachability_associations_log	= binary_reachability_associations_log,
+	.host_discovery_log		= binary_host_discovery_log,
+	.ave_discovery_log		= binary_ave_discovery_log,
+	.pull_model_ddc_req_log		= binary_pull_model_ddc_req_log,
 
 	/* libnvme tree print functions */
 	.list_item			= NULL,
@@ -377,9 +435,10 @@ static struct print_ops binary_print_ops = {
 	.show_perror			= NULL,
 	.show_status			= NULL,
 	.show_error_status		= NULL,
+	.show_key_value			= NULL,
 };
 
-struct print_ops *nvme_get_binary_print_ops(enum nvme_print_flags flags)
+struct print_ops *nvme_get_binary_print_ops(nvme_print_flags_t flags)
 {
 	binary_print_ops.flags = flags;
 	return &binary_print_ops;

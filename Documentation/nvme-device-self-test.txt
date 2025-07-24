@@ -11,6 +11,7 @@ SYNOPSIS
 'nvme device-self-test' <device> [--namespace-id=<NUM> | -n <NUM>]
 			[--self-test-code=<NUM> | -s <NUM>] [--wait | -w]
 			[--output-format=<fmt> | -o <fmt>] [--verbose | -v]
+			[--timeout=<timeout> | -t <timeout>]
 
 DESCRIPTION
 -----------
@@ -20,6 +21,8 @@ The <device> parameter is mandatory and may be either the NVMe character
 device (ex: /dev/nvme0), or a namespace block device (ex: /dev/nvme0n1).
 
 On success, the corresponding test is initiated.
+
+The results of this test can be queried via 'nvme self-test-log <device>'.
 
 OPTIONS
 -------
@@ -51,6 +54,10 @@ OPTIONS
 -v::
 --verbose::
 	Increase the information detail in the output.
+
+-t <timeout>::
+--timeout=<timeout>::
+	Override default timeout value. In milliseconds.
 
 EXAMPLES
 --------

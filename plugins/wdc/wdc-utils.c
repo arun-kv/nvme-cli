@@ -81,16 +81,16 @@ int wdc_UtilsGetTime(PUtilsTimeInfo timeInfo)
 	timeInfo->second		=  currTimeInfo.tm_sec;
 	timeInfo->msecs			=  0;
 	timeInfo->isDST			=  currTimeInfo.tm_isdst;
-#if defined(__GLIBC__) && !defined(__UCLIBC__) && !defined(__MUSL__)
+#ifdef HAVE_TM_GMTOFF
 	timeInfo->zone			= -currTimeInfo.tm_gmtoff / 60;
-#else
+#else /* HAVE_TM_GMTOFF */
 	timeInfo->zone			= -1 * (timezone / SECONDS_IN_MIN);
-#endif
+#endif /* HAVE_TM_GMTOFF */
 
 	return WDC_STATUS_SUCCESS;
 }
 
-int wdc_UtilsCreateDir(char *path)
+int wdc_UtilsCreateDir(const char *path)
 {
 	int retStatus;
 	int status = WDC_STATUS_SUCCESS;
@@ -111,7 +111,7 @@ int wdc_UtilsCreateDir(char *path)
 	return status;
 }
 
-int wdc_WriteToFile(char *fileName, char *buffer, unsigned int bufferLen)
+int wdc_WriteToFile(const char *fileName, const char *buffer, unsigned int bufferLen)
 {
 	int          status = WDC_STATUS_SUCCESS;
 	FILE         *file;
@@ -143,7 +143,7 @@ end:
  *          1 if the pcSrc string is lexically higher than pcDst or
  *         -1 if the pcSrc string is lexically lower than pcDst.
  */
-int wdc_UtilsStrCompare(char *pcSrc, char *pcDst)
+int wdc_UtilsStrCompare(const char *pcSrc, const char *pcDst)
 {
 	while ((toupper(*pcSrc) == toupper(*pcDst)) && (*pcSrc != '\0')) {
 		pcSrc++;
@@ -188,9 +188,4 @@ bool wdc_CheckUuidListSupport(struct nvme_dev *dev, struct nvme_id_uuid_list *uu
 	}
 
 	return false;
-}
-
-bool wdc_UuidEqual(struct nvme_id_uuid_list_entry *entry1, struct nvme_id_uuid_list_entry *entry2)
-{
-	return !memcmp(entry1, entry2, NVME_UUID_LEN);
 }

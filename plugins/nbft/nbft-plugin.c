@@ -4,11 +4,12 @@
 #include <stdio.h>
 #include <fnmatch.h>
 
+#include <libnvme.h>
 #include "nvme-print.h"
 #include "nvme.h"
 #include "nbft.h"
-#include "libnvme.h"
 #include "fabrics.h"
+#include "logging.h"
 
 #define CREATE_CMD
 #include "nbft-plugin.h"
@@ -46,6 +47,7 @@ static char *mac_addr_to_string(unsigned char mac_addr[6])
 	return mac_string;
 }
 
+#ifdef CONFIG_JSONC
 static json_object *hfi_to_json(struct nbft_info_hfi *hfi)
 {
 	struct json_object *hfi_json;
@@ -168,7 +170,11 @@ static json_object *ssns_to_json(struct nbft_info_subsystem_ns *ss)
 	    || json_object_add_value_int(ss_json, "pdu_header_digest_required",
 					 ss->pdu_header_digest_required)
 	    || json_object_add_value_int(ss_json, "data_digest_required",
-					 ss->data_digest_required))
+					 ss->data_digest_required)
+	    || json_object_add_value_int(ss_json, "discovered",
+					 ss->discovered)
+	    || json_object_add_value_int(ss_json, "unavailable",
+					 ss->unavailable))
 		goto fail;
 
 	return ss_json;
@@ -319,7 +325,7 @@ static int json_show_nbfts(struct list_head *nbft_list, bool show_subsys,
 			   bool show_hfi, bool show_discovery)
 {
 	struct json_object *nbft_json_array, *nbft_json;
-	struct nbft_file_entry *entry;
+	struct nbft_file_entry *entry = NULL;
 
 	nbft_json_array = json_create_array();
 	if (!nbft_json_array)
@@ -343,6 +349,9 @@ fail:
 	json_free_object(nbft_json_array);
 	return -ENOMEM;
 }
+#else /* CONFIG_JSONC */
+#define json_show_nbfts(nbft_list, show_subsys, show_hfi, show_discovery) -EINVAL
+#endif /* CONFIG_JSONC */
 
 static void print_nbft_hfi_info(struct nbft_info *nbft)
 {
@@ -510,7 +519,7 @@ static void normal_show_nbfts(struct list_head *nbft_list, bool show_subsys,
 			      bool show_hfi, bool show_discovery)
 {
 	bool not_first = false;
-	struct nbft_file_entry *entry;
+	struct nbft_file_entry *entry = NULL;
 
 	list_for_each(nbft_list, entry, node) {
 		if (not_first)
@@ -526,9 +535,10 @@ int show_nbft(int argc, char **argv, struct command *cmd, struct plugin *plugin)
 	struct list_head nbft_list;
 	char *format = "normal";
 	char *nbft_path = NBFT_SYSFS_PATH;
-	enum nvme_print_flags flags;
+	nvme_print_flags_t flags;
 	int ret;
 	bool show_subsys = false, show_hfi = false, show_discovery = false;
+	unsigned int verbose = 0;
 
 	OPT_ARGS(opts) = {
 		OPT_FMT("output-format", 'o', &format, "Output format: normal|json"),
@@ -536,12 +546,16 @@ int show_nbft(int argc, char **argv, struct command *cmd, struct plugin *plugin)
 		OPT_FLAG("hfi", 'H', &show_hfi, "show NBFT HFIs"),
 		OPT_FLAG("discovery", 'd', &show_discovery, "show NBFT discovery controllers"),
 		OPT_STRING("nbft-path", 0, "STR", &nbft_path, "user-defined path for NBFT tables"),
+		OPT_INCR("verbose", 'v', &verbose, "Increase logging verbosity"),
 		OPT_END()
 	};
 
 	ret = argconfig_parse(argc, argv, desc, opts);
 	if (ret)
 		return ret;
+
+	log_level = map_log_level(verbose, false /* quiet */);
+	nvme_init_default_logging(stderr, log_level, false, false);
 
 	ret = validate_output_format(format, &flags);
 	if (ret < 0)

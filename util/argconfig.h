@@ -47,7 +47,6 @@ enum argconfig_types {
 	CFG_FLAG,
 	CFG_STRING,
 	CFG_INT,
-	CFG_SIZE,
 	CFG_LONG,
 	CFG_LONG_SUFFIX,
 	CFG_DOUBLE,
@@ -96,6 +95,12 @@ enum argconfig_types {
 #define OPT_FILE(l, s, v, d, ...) OPT_STRING(l, s, "FILE", v, d, __VA_ARGS__)
 #define OPT_LIST(l, s, v, d, ...) OPT_STRING(l, s, "LIST", v, d, __VA_ARGS__)
 #define OPT_STR(l, s, v, d, ...) OPT_STRING(l, s, "STRING", v, d, __VA_ARGS__)
+
+#ifdef CONFIG_JSONC
+#define OPT_FLAG_JSON(l, s, v, d, ...) OPT_FLAG(l, s, v, d, __VA_ARGS__)
+#else /* CONFIG_JSONC */
+#define OPT_FLAG_JSON(l, s, v, d, ...) OPT_END()
+#endif /* CONFIG_JSONC */
 
 #define OPT_VALS(n) \
 	struct argconfig_opt_val n[]
@@ -181,7 +186,6 @@ int argconfig_parse_comma_sep_array_u32(char *string, __u32 *val,
 					unsigned int max_length);
 int argconfig_parse_comma_sep_array_u64(char *string, __u64 *val,
 					unsigned int max_length);
-int argconfig_parse_byte(const char *opt, const char *str, unsigned char *val);
 
 void print_word_wrapped(const char *s, int indent, int start, FILE *stream);
 bool argconfig_parse_seen(struct argconfig_commandline_options *options,
