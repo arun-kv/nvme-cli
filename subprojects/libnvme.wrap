@@ -1,6 +1,6 @@
 [wrap-git]
 #url = https://github.com/linux-nvme/libnvme.git
-url = git@github.com:arun-kv/libnvme.git
+url = https://github.com/arun-kv/libnvme.git
 revision = master
 #revision = bff7dda7e2a0f883d0b89e23fed725c916de3e61
 
