@@ -6712,7 +6712,7 @@ int send_abort(int argc, char **argv, struct command *cmd, struct plugin *plugin
 
 	_cleanup_nvme_dev_ struct nvme_dev *dev = NULL;
 	_cleanup_free_ void *buf = NULL;
-	_cleanup_file_ int ffd = -1;
+	_cleanup_file_ FILE *fd = NULL;
 	int err;
 	__u32 result;
 
@@ -6726,7 +6726,7 @@ int send_abort(int argc, char **argv, struct command *cmd, struct plugin *plugin
 		.sqid		= 0,
 	};
 
-	NVME_ARGS(opts, cfg,
+	NVME_ARGS(opts,
 		  OPT_UINT("sqid",        's', &cfg.sqid,        sqid),
 		  OPT_UINT("cid",      'c', &cfg.cid,        cid));
 
@@ -8336,10 +8336,10 @@ static int submit_io(int opcode, char *command, const char *desc, int argc, char
 	}
 
 	if (cfg.fused > 2) {
-		fprintf(stderr, "Invalid fused flag.\n");
-		err = -EINVAL;
-		goto err;
+		nvme_show_error("Invalid fused flag: %s", nvme_strerror(errno));
+		return err;
 	}
+
 	if (!cfg.namespace_id) {
 		err = nvme_get_nsid(dev_fd(dev), &cfg.namespace_id);
 		if (err < 0) {
